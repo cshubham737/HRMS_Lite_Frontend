@@ -220,6 +220,7 @@ function Attendance() {
             <input
               type="date"
               name="date"
+              placeholder='Select date'
               value={filters.date}
               onChange={handleFilterChange}
               className="input-modern"
