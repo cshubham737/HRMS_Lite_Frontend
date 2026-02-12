@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { attendanceAPI, employeeAPI } from '../services/api';
 import DeleteIcon from '@mui/icons-material/Delete';
+import Swal from 'sweetalert2';
+
 
 function Attendance() {
   const [attendanceRecords, setAttendanceRecords] = useState([]);
@@ -35,18 +37,18 @@ function Attendance() {
   }, []);
 
   const fetchAttendance = useCallback(async () => {
-  try {
-    setLoading(true);
-    const response = await attendanceAPI.getAll(filters);
-    setAttendanceRecords(response.data.data);
-    setError('');
-  } catch (err) {
-    setError('Failed to load attendance records');
-    console.error(err);
-  } finally {
-    setLoading(false);
-  }
-}, [filters]);
+    try {
+      setLoading(true);
+      const response = await attendanceAPI.getAll(filters);
+      setAttendanceRecords(response.data.data);
+      setError('');
+    } catch (err) {
+      setError('Failed to load attendance records');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [filters]);
 
 
   const fetchSummary = async (employeeId) => {
@@ -127,54 +129,98 @@ function Attendance() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
+  e.preventDefault();
 
-    try {
-      await attendanceAPI.mark(formData);
-      setSuccess('Attendance marked successfully!');
+  if (!validateForm()) {
+    return;
+  }
+
+  try {
+    const response = await attendanceAPI.mark(formData);
+
+    // Only show success if backend really returns success
+    if (response.data.success) {
+      Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: response.data.message || 'Attendance marked successfully!',
+        timer: 2000,
+        showConfirmButton: false
+      });
+
       setShowModal(false);
       setFormData({
         employee_id: '',
         date: new Date().toISOString().split('T')[0],
         status: 'Present'
       });
+
       fetchAttendance();
+
       if (filters.employee_id) {
         fetchSummary(filters.employee_id);
       }
-      setTimeout(() => setSuccess(''), 3000);
-    } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Failed to mark attendance';
-      setError(errorMessage);
-      setTimeout(() => setError(''), 5000);
     }
-  };
+
+  } catch (err) {
+    const errorMessage =
+      err.response?.data?.detail || 'Failed to mark attendance';
+
+    Swal.fire({
+      icon: 'error',
+      title: 'Attendance Error',
+      text: errorMessage,
+      confirmButtonColor: '#d33'
+    });
+  }
+};
+
+
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this attendance record?')) {
-      try {
-        await attendanceAPI.delete(id);
-        setSuccess('Attendance record deleted successfully!');
-        fetchAttendance();
-        if (filters.employee_id) {
-          fetchSummary(filters.employee_id);
-        }
-        setTimeout(() => setSuccess(''), 3000);
-      } catch (err) {
-        setError('Failed to delete attendance record');
-        setTimeout(() => setError(''), 3000);
-      }
+  const result = await Swal.fire({
+    title: 'Are you sure?',
+    text: "This attendance record will be permanently deleted!",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Yes, delete it!'
+  });
+
+  if (!result.isConfirmed) return;
+
+  try {
+    await attendanceAPI.delete(id);
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Deleted!',
+      text: 'Attendance record deleted successfully.',
+      timer: 2000,
+      showConfirmButton: false
+    });
+
+    fetchAttendance();
+
+    if (filters.employee_id) {
+      fetchSummary(filters.employee_id);
     }
-  };
+
+  } catch (err) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'Failed to delete attendance record',
+    });
+  }
+};
+
 
   useEffect(() => {
-  fetchEmployees();
-  fetchAttendance();
-}, [fetchEmployees, fetchAttendance]);
+    fetchEmployees();
+    fetchAttendance();
+  }, [fetchEmployees, fetchAttendance]);
 
   return (
     <div>
@@ -191,7 +237,7 @@ function Attendance() {
       {success && <div className="success-message">{success}</div>}
       {error && <div className="error-message">{error}</div>}
 
-    
+
       {/* Filters */}
       <div className="card">
         <h3 style={{ marginBottom: '1rem' }}>Filters</h3>
