@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { attendanceAPI, employeeAPI } from '../services/api';
 import DeleteIcon from '@mui/icons-material/Delete';
 
@@ -23,32 +23,34 @@ function Attendance() {
   const [summary, setSummary] = useState(null);
 
   useEffect(() => {
-    fetchEmployees();
-    fetchAttendance();
-  }, []);
+  fetchEmployees();
+  fetchAttendance();
+}, [fetchEmployees, fetchAttendance]);
 
-  const fetchEmployees = async () => {
+
+  const fetchEmployees = useCallback(async () => {
     try {
       const response = await employeeAPI.getAll();
       setEmployees(response.data.data);
     } catch (err) {
       console.error('Failed to load employees', err);
     }
-  };
+  }, []);
 
-  const fetchAttendance = async () => {
-    try {
-      setLoading(true);
-      const response = await attendanceAPI.getAll(filters);
-      setAttendanceRecords(response.data.data);
-      setError('');
-    } catch (err) {
-      setError('Failed to load attendance records');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const fetchAttendance = useCallback(async () => {
+  try {
+    setLoading(true);
+    const response = await attendanceAPI.getAll(filters);
+    setAttendanceRecords(response.data.data);
+    setError('');
+  } catch (err) {
+    setError('Failed to load attendance records');
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+}, [filters]);
+
 
   const fetchSummary = async (employeeId) => {
     if (!employeeId) {
