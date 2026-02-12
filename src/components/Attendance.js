@@ -22,10 +22,7 @@ function Attendance() {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [summary, setSummary] = useState(null);
 
-  useEffect(() => {
-  fetchEmployees();
-  fetchAttendance();
-}, [fetchEmployees, fetchAttendance]);
+
 
 
   const fetchEmployees = useCallback(async () => {
@@ -173,6 +170,11 @@ function Attendance() {
       }
     }
   };
+
+  useEffect(() => {
+  fetchEmployees();
+  fetchAttendance();
+}, [fetchEmployees, fetchAttendance]);
 
   return (
     <div>
