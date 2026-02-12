@@ -8,8 +8,6 @@ function Attendance() {
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [filters, setFilters] = useState({
     employee_id: '',
@@ -41,10 +39,8 @@ function Attendance() {
       setLoading(true);
       const response = await attendanceAPI.getAll(filters);
       setAttendanceRecords(response.data.data);
-      setError('');
     } catch (err) {
-      setError('Failed to load attendance records');
-      console.error(err);
+      console.error('Failed to load attendance records', err);
     } finally {
       setLoading(false);
     }
@@ -233,9 +229,6 @@ function Attendance() {
           + Mark Attendance
         </button>
       </div>
-
-      {success && <div className="success-message">{success}</div>}
-      {error && <div className="error-message">{error}</div>}
 
 
       {/* Filters */}
